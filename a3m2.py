@@ -1,8 +1,9 @@
 import json
+from nltk.stem import PorterStemmer
 
 class SearchEngine:
     def __init__(self, index_file='index.json', url_file='hash_url.json'):
-        self.index = self.read_file(index_file) #{token: [frequency in number of docs, {doc_id: [frequency of token in doc, [index of occurrence]]}]}
+        self.index = self.read_file(index_file) #{token: [frequency in number of docs, {doc_id: [tf, [index of occurrence]]}, idf]}
         self.urls = self.read_file(url_file)
         self.toks = []
 
@@ -18,6 +19,7 @@ class SearchEngine:
         if not line:
             return None
 
+        ps = PorterStemmer()
         ret = []
         for char in line:
             if not char.isalnum():
@@ -25,7 +27,7 @@ class SearchEngine:
 
         for words in line.split(' '):
             if words != "":
-                ret.append(words.lower())
+                ret.append(ps.stem(words.lower()))
         return ret
 
 
@@ -57,11 +59,16 @@ class SearchEngine:
             return None
 
         temp = {}
-        for doc in docs:
-            temp[doc] = 0
-            for tok in self.toks:
-                if tok in self.index:
-                    temp[doc] += self.index[tok][1][doc][0]
+        if len(self.toks) > 1:
+            for doc in docs:
+                temp[doc] = 0
+                for tok in self.toks:
+                    if tok in self.index:
+                        temp[doc] += self.index[tok][1][doc][0] * self.index[tok][2]
+        else:
+            for doc in docs:
+                temp[doc] = 0
+                temp[doc] += self.index[self.toks[0]][1][doc][0]
 
         return [k for k, v in sorted(temp.items(), key=lambda item: item[1], reverse=True)]
 
