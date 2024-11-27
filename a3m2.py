@@ -12,9 +12,6 @@ class SearchEngine:
             data = json.load(f)
             return data
 
-    def get_tok(self, tok):
-        return self.index[tok]
-
     def tokenize(self, line):
         if not line:
             return None
