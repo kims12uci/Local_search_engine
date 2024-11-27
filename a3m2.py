@@ -37,20 +37,24 @@ class SearchEngine:
         if not query:
             return None
 
-        self.toks = query
-
         temp = {}
         for token in set(query):
             if token in self.index:
-                temp[token] = self.index[token][0]
+                temp[token] = self.index[token][2]
 
         if not temp:
             return None
-        sorted_toks = [k for k, v in sorted(temp.items(), key=lambda item: item[1])]
+
+        sorted_toks = [k for k, v in sorted(temp.items(), key=lambda item: item[1], reverse=True)]
+        if len(sorted_toks) > 3:
+            sorted_toks = sorted_toks[:len(sorted_toks) - (len(sorted_toks)//3)]
+
         docs = set(self.index[sorted_toks[0]][1].keys())
+        self.toks = sorted_toks
+
         if len(sorted_toks) > 1:
             for toks in sorted_toks[1:]:
-                docs &= set(self.index[toks][1].keys())
+                docs = set(self.index[toks][1].keys()).union(docs)
 
         return docs
 
@@ -63,7 +67,7 @@ class SearchEngine:
             for doc in docs:
                 temp[doc] = 0
                 for tok in self.toks:
-                    if tok in self.index:
+                    if tok in self.index and doc in self.index[tok][1]:
                         temp[doc] += self.index[tok][1][doc][0] * self.index[tok][2]
         else:
             for doc in docs:
